@@ -12,8 +12,9 @@ import asyncio
 
 from tgbot.keyboards.adminInlineBtn import noun_correct_kb
 from tgbot.keyboards.adminTextBtn import admin_action_keyboard, admin_der_die_das
+from tgbot.keyboards.textBtn import home_keyboard
 from tgbot.misc.admin_states import AddNoun
-from tgbot.misc.functions import base_start
+from tgbot.misc.functions import sql_with_args, sql_fetchone_with_args, sql_fetchone
 from tgbot.services.del_message import delete_message
 
 from tgbot.keyboards.inlineBtn import CastomCallback
@@ -35,19 +36,29 @@ bot = Bot(token=config.tg_bot.token, parse_mode='HTML')
 
 @admin_router.message(Command('admin'))
 async def admin_start(m: Message):
-    await m.reply("Вітаю, адміне!")
+    await m.reply("Hi, admin!")
     await m.answer("Please, choose action", reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
 
 
+@admin_router.message(Command('cancel'))
+async def cancel_add_noun(m: Message, state: FSMContext):
+    await state.clear()
+    await m.answer("You have reached the main menu")
+    await m.answer("Okay. Please, choose action",
+                   reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
+
+
+@admin_router.message(Command('exit'))
+async def exit_to_user_menu(m: Message, state: FSMContext):
+    await state.clear()
+    await m.reply("You have reached the user main menu",
+                  reply_markup=home_keyboard().as_markup(resize_keyboard=True))
+
+
 @admin_router.message(Text('Users'))
-async def bt_achievements(m: Message):
-    cur, base = base_start()
-    cur.execute('SELECT count(*) FROM "users"')
-    amount = cur.fetchone()
+async def bt_users(m: Message):
+    amount = await sql_fetchone('SELECT count(*) FROM "users"')
     await m.answer(f"currently registered users in the bot: {amount[0]}")
-    base.commit()
-    cur.close()
-    base.close()
 
 
 @admin_router.message(Text('Add noun'))
@@ -104,7 +115,7 @@ async def en_translation(m: Message, state: FSMContext):
 
 
 @admin_router.message(Text, AddNoun.sing_ukr)
-async def en_translation(m: Message, state: FSMContext):
+async def uk_translation(m: Message, state: FSMContext):
     ukrainian = m.text
     await state.update_data(s_ukr=ukrainian)
     await m.answer("Good! Please write a translation for <b>Ukrainian</b> in <b>Plural</b>")
@@ -149,29 +160,25 @@ async def ru_translation(m: Message, state: FSMContext):
 async def noun_correct(c: types.CallbackQuery, state: FSMContext):
     user_id = c.from_user.id
     await c.message.delete()
-    cur, base = base_start()
     data = await state.get_data()
-    cur.execute('INSERT INTO "nouns" (article,'
-                ' noun_single_ger,'
-                ' noun_plural_ger,'
-                ' noun_single_eng,'
-                ' noun_plural_eng,'
-                ' noun_single_ukr,'
-                ' noun_plural_ukr,'
-                ' noun_single_rus,'
-                ' noun_plural_rus) VALUES (%s, %s,  %s,  %s,  %s,  %s,  %s,  %s,  %s)', (data['article'],
-                                                                                         data['noun'],
-                                                                                         data['plural'],
-                                                                                         data['s_eng'],
-                                                                                         data['p_eng'],
-                                                                                         data['s_ukr'],
-                                                                                         data['p_ukr'],
-                                                                                         data['s_rus'],
-                                                                                         data['p_rus'],))
+    await sql_with_args('INSERT INTO "nouns" (article,'
+                        ' noun_single_ger,'
+                        ' noun_plural_ger,'
+                        ' noun_single_eng,'
+                        ' noun_plural_eng,'
+                        ' noun_single_ukr,'
+                        ' noun_plural_ukr,'
+                        ' noun_single_rus,'
+                        ' noun_plural_rus) VALUES (%s, %s,  %s,  %s,  %s,  %s,  %s,  %s,  %s)', (data['article'],
+                                                                                                 data['noun'],
+                                                                                                 data['plural'],
+                                                                                                 data['s_eng'],
+                                                                                                 data['p_eng'],
+                                                                                                 data['s_ukr'],
+                                                                                                 data['p_ukr'],
+                                                                                                 data['s_rus'],
+                                                                                                 data['p_rus'],))
     await state.clear()
-    base.commit()
-    cur.close()
-    base.close()
     await bot.send_message(user_id, "Congratulations! New word has been added",
                            reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
 
@@ -185,12 +192,3 @@ async def noun_incorrect(c: types.CallbackQuery, state: FSMContext):
     await bot.send_message(user_id,
                            "Okay. Please, choose action",
                            reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
-
-
-@admin_router.message(Command('menu'), State('*'))
-async def back_to_menu(m: Message, state: FSMContext):
-    await state.clear()
-    await m.answer("You have reached the main menu")
-    await m.answer("Okay. Please, choose action",
-                   reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
-

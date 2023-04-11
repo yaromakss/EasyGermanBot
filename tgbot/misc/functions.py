@@ -11,6 +11,8 @@ from psycopg2.extensions import AsIs
 import datetime
 import asyncio
 
+from tgbot.keyboards.adminTextBtn import admin_action_keyboard
+
 config = load_config(".env")
 bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
 # bot2 = Bot(token=config.tg_bot.token2, parse_mode="HTML")
@@ -27,9 +29,36 @@ def base_start():
     return cur, base
 
 
+async def sql_fetchone_with_args(query: str, args: tuple):
+    cur, base = base_start()
+    cur.execute(query, args)
+    data = cur.fetchone()
+    base.commit()
+    cur.close()
+    base.close()
+    return data
+
+
+async def sql_fetchone(query: str):
+    cur, base = base_start()
+    cur.execute(query)
+    data = cur.fetchone()
+    base.commit()
+    cur.close()
+    base.close()
+    return data
+
+
+async def sql_with_args(query: str, args: tuple):
+    cur, base = base_start()
+    cur.execute(query, args)
+    base.commit()
+    cur.close()
+    base.close()
+
+
 async def auth_status(user_id):
     cur, base = base_start()
-
     user_id = str(user_id)
     cur.execute('SELECT * FROM "users"')
     users = cur.fetchall()
@@ -43,71 +72,23 @@ async def auth_status(user_id):
     return answer
 
 
-async def add_user(user_id, user_name, name):
-    cur, base = base_start()
-
-    data = (user_id, name, user_name)
-    cur.execute('INSERT INTO "users" (id, name, username) VALUES (%s,%s,%s)', data)
-    base.commit()
-    cur.close()
-    base.close()
-
-
-async def get_lang(user_id):
-    cur, base = base_start()
-
-    cur.execute('SELECT lang FROM "users" WHERE id = %s', (user_id,))
-    lang = cur.fetchone()
-    base.commit()
-    cur.close()
-    base.close()
-    return lang[0]
-
-
-async def get_last_achievements(user_id):
-    await check_last_achievement(user_id)
-    cur, base = base_start()
-    cur.execute('SELECT last_achievement FROM "users" WHERE id = %s', (user_id,))
-    achive = cur.fetchone()
-    base.commit()
-    cur.close()
-    base.close()
-    return achive[0]
-
-
-async def get_correct_answers(user_id):
-    cur, base = base_start()
-    cur.execute('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
-    answ = cur.fetchone()
-    base.commit()
-    cur.close()
-    base.close()
-    return answ[0]
-
-
 async def check_last_achievement(user_id):
-    cur, base = base_start()
-    cur.execute('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
-    correct = cur.fetchone()[0]
+    correct = await sql_fetchone_with_args('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
     last = 0
-    if correct < 10:
+    if correct[0] < 10:
         last = 0
-    elif correct < 100:
+    elif correct[0] < 100:
         last = 1
-    elif correct < 500:
+    elif correct[0] < 500:
         last = 2
-    elif correct < 1000:
+    elif correct[0] < 1000:
         last = 3
-    elif correct < 3000:
+    elif correct[0] < 3000:
         last = 4
-    elif correct < 5000:
+    elif correct[0] < 5000:
         last = 5
-    elif correct < 10000:
+    elif correct[0] < 10000:
         last = 6
-    elif correct >= 10000:
+    elif correct[0] >= 10000:
         last = 7
-    cur.execute('UPDATE "users" SET "last_achievement" = %s WHERE id = %s', (last, user_id))
-    base.commit()
-    cur.close()
-    base.close()
-    print(f'last: {last}')
+    await sql_with_args('UPDATE "users" SET "last_achievement" = %s WHERE id = %s', (last, user_id))

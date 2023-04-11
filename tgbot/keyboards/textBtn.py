@@ -1,36 +1,74 @@
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardButton, InlineKeyboardBuilder
-from aiogram import Bot, types
+from aiogram.types import KeyboardButton
 
 
 def home_keyboard():
     home_buttons = ReplyKeyboardBuilder()
     home_buttons.add(
-        types.KeyboardButton(text="Plural")
+        KeyboardButton(text="Plural")
     )
     home_buttons.add(
-        types.KeyboardButton(text="Articles")
+        KeyboardButton(text="Articles")
     )
     home_buttons.add(
-        types.KeyboardButton(text="Participle II (Perfect)")
+        KeyboardButton(text="Participle II (Perfect)")
     )
     home_buttons.add(
-        types.KeyboardButton(text="Random word")
+        KeyboardButton(text="Random word")
     )
     home_buttons.add(
-        types.KeyboardButton(text="Achievements")
+        KeyboardButton(text="Achievements")
     )
     home_buttons.adjust(1)
     return home_buttons
 
 
-def choose_lang_keyboard():
-    choose_lang_bts = ReplyKeyboardBuilder()
-    choose_lang_bts.add(
-        types.KeyboardButton(text="")
+def random_word_kb():
+    kb = ReplyKeyboardBuilder()
+    kb.add(
+        KeyboardButton(text="Noun")
     )
+    kb.add(
+        KeyboardButton(text="Verb")
+    )
+    kb.add(
+        KeyboardButton(text="Adjectives")
+    )
+    kb.add(
+        KeyboardButton(text="Else")
+    )
+    kb.add(
+        KeyboardButton(text="Menu")
+    )
+    kb.adjust(2)
+    return kb
 
 
+def der_die_das_kb():
+    kb = ReplyKeyboardBuilder()
+    kb.add(
+        KeyboardButton(text="der")
+    )
+    kb.add(
+        KeyboardButton(text="die")
+    )
+    kb.add(
+        KeyboardButton(text="das")
+    )
+    kb.adjust(3)
+    return kb
 
+
+def next_or_menu_kb():
+    kb = ReplyKeyboardBuilder()
+    kb.add(
+        KeyboardButton(text="menu")
+    )
+    kb.add(
+        KeyboardButton(text="next")
+    )
+    kb.adjust(2)
+    return kb
 
 
 
