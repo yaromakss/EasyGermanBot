@@ -10,7 +10,7 @@ from aiogram.filters.callback_data import CallbackData
 from tgbot.misc.big_text import achievements
 from tgbot.misc.functions import auth_status, sql_fetchone_with_args, sql_fetchone,\
     sql_with_args, check_last_achievement
-from tgbot.keyboards.textBtn import home_keyboard, random_word_kb, der_die_das_kb, next_or_menu_kb
+from tgbot.keyboards.textBtn import home_keyboard, random_word_kb, der_die_das_kb, next_or_menu_kb, idk_plural_kb
 from tgbot.keyboards.inlineBtn import choose_lang_keyboard, achievements_category
 
 
@@ -19,7 +19,7 @@ import datetime
 import requests
 import asyncio
 
-from tgbot.misc.states import RandomWordState, ArticlesState
+from tgbot.misc.states import RandomWordState, ArticlesState, PluralState
 from tgbot.services.del_message import delete_message
 
 from tgbot.keyboards.inlineBtn import CastomCallback
@@ -207,40 +207,67 @@ async def back_to_menu_from_article(m: Message, state: FSMContext):
                    reply_markup=home_keyboard().as_markup(resize_keyboard=True))
 
 
+@user_router.message(Text("Plural"))
+@user_router.message(Text("next"), PluralState.next_or_menu)
+async def bt_plural(m: Message, state: FSMContext):
+    fetch = None
+    user_lang = await sql_fetchone_with_args('SELECT lang FROM "users" WHERE id = %s', (m.from_user.id,))
+    if user_lang[0] == "ru":
+        fetch = await sql_fetchone("select noun_single_ger, article, noun_plural_ger, noun_single_rus, noun_plural_rus "
+                                   "from nouns "
+                                   "order by random() limit 1")
+    elif user_lang[0] == "ua":
+        fetch = await sql_fetchone("select noun_single_ger, article, noun_plural_ger, noun_single_ukr, noun_plural_ukr "
+                                   "from nouns "
+                                   "order by random() limit 1")
+    elif user_lang[0] == "en":
+        fetch = await sql_fetchone("select noun_single_ger, article, noun_plural_ger, noun_single_eng, noun_plural_eng "
+                                   "from nouns "
+                                   "order by random() limit 1")
+    await state.update_data(s_ger=fetch[0])
+    await state.update_data(article=fetch[1])
+    await state.update_data(p_ger=fetch[2])
+    await state.update_data(s_trans=fetch[3].capitalize())
+    await state.update_data(p_trans=fetch[4].capitalize())
+    await m.answer(f"Write the plural form of the verb <b><u>with article</u></b>\nRandom noun - <b>{fetch[1]} {fetch[0]}</b>",
+                   reply_markup=idk_plural_kb().as_markup(resize_keyboard=True))
+    await state.set_state(PluralState.answer)
+
+
+@user_router.message(Text('i don`t know'), PluralState.answer)
+async def idk_in_plural(m: Message, state: FSMContext):
+    data = await state.get_data()
+    await m.answer(f"{data['article']} {data['s_ger']} - <b>die {data['p_ger']}</b>\n"
+                   f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
+                   reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+    await state.set_state(PluralState.next_or_menu)
+
+
+@user_router.message(Text, PluralState.answer)
+async def write_plural_for_noun(m: Message, state: FSMContext):
+    data = await state.get_data()
+    user_answer = m.text.lower()
+    if user_answer.strip() == f"die {data['p_ger'].lower()}":
+        await m.answer(f"✅ Correct!\n"
+                       f"{data['article']} {data['s_ger']} - <b>die {data['p_ger']}</b>\n"
+                       f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
+                       reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+    else:
+        await m.answer(f"❌ Wrong!\n"
+                       f"Correct:\n"
+                       f"{data['article']} {data['s_ger']} - <b>die {data['p_ger']}</b>\n"
+                       f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
+                       reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+    await state.set_state(PluralState.next_or_menu)
+
+
+@user_router.message(Text("menu"), PluralState.next_or_menu)
+async def back_to_menu_from_article(m: Message, state: FSMContext):
+    await state.clear()
+    await m.answer("You have reached the main menu",
+                   reply_markup=home_keyboard().as_markup(resize_keyboard=True))
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-# @user_router.message(F.text.in_({'Achievements', 'Досягнення', 'Достижения', 'achievements', 'досягнення', 'достижения'}))
-# async def bt_achievements(m: types.Message, state: FSMContext):
-#     user_id = m.from_user.id
-#     lang = await check_lang(user_id)
-#     if lang == "en":
-#         await bot.send_message(user_id, "Choose a category", reply_markup=achievements_category())
-#     elif lang == "ua":
-#         await bot.send_message(user_id, "Оберіть категорію", reply_markup=achievements_category())
-#     elif lang == "ru":
-#         await bot.send_message(user_id, "Выберите категорию", reply_markup=achievements_category())
-
-
-
-
-
-
-
-
-
-
-
-# version for some text messages
-# @user_router.message(F.text.in_({'Покупка акаунтов бирж', 'Покупка кошелька Юмани'}))

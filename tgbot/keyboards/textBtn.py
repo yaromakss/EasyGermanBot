@@ -71,5 +71,12 @@ def next_or_menu_kb():
     return kb
 
 
+def idk_plural_kb():
+    kb = ReplyKeyboardBuilder()
+    kb.add(
+        KeyboardButton(text="i don`t know")
+    )
+    return kb
+
 
 

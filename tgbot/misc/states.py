@@ -16,3 +16,7 @@ class ArticlesState(StatesGroup):
     next_or_menu = State()
 
 
+class PluralState(StatesGroup):
+    answer = State()
+    next_or_menu = State()
+
