@@ -24,3 +24,17 @@ def noun_correct_kb():
     return kb
 
 
+def adj_correct_kb():
+    kb = InlineKeyboardBuilder()
+    kb.add(types.InlineKeyboardButton(
+        text="✅ Yes",
+        callback_data="adj_correct"
+    ))
+    kb.add(types.InlineKeyboardButton(
+        text="❌ No",
+        callback_data="adj_incorrect"
+    ))
+    kb.adjust(2)
+    return kb
+
+

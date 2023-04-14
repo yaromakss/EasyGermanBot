@@ -19,7 +19,7 @@ import datetime
 import requests
 import asyncio
 
-from tgbot.misc.states import RandomWordState, ArticlesState, PluralState
+from tgbot.misc.states import RandomWordState, ArticlesState, PluralState, PerfectState
 from tgbot.services.del_message import delete_message
 
 from tgbot.keyboards.inlineBtn import CastomCallback
@@ -87,6 +87,12 @@ async def en_language(c: types.CallbackQuery):
     await c.answer("Language has been changed")
     await bot.send_message(user_id, "Hello! Are you ready to play and learn german?😉",
                            reply_markup=home_keyboard().as_markup(resize_keyboard=True))
+
+
+@user_router.message(Command('admin'))
+async def user_cannot_be_an_admin(m: Message):
+    await m.answer("Insufficient access rights",
+                   reply_markup=home_keyboard().as_markup(resize_keyboard=True))
 
 
 @user_router.message(Command('menu'))
@@ -159,6 +165,20 @@ async def random_word_noun(m: Message, state: FSMContext):
     await state.set_state(RandomWordState.button)
 
 
+@user_router.message(Text("Verb"), RandomWordState.button)
+async def random_word_noun(m: Message, state: FSMContext):
+    noun = await sql_fetchone("select verb_ger_inf from verbs order by random() limit 1")
+    await m.answer(f"Random verb: <b>{noun[0]}</b>", reply_markup=random_word_kb().as_markup(resize_keyboard=True))
+    await state.set_state(RandomWordState.button)
+
+
+@user_router.message(Text("Adjectives"), RandomWordState.button)
+async def random_word_noun(m: Message, state: FSMContext):
+    noun = await sql_fetchone("select adj_ger from adjectives order by random() limit 1")
+    await m.answer(f"Random adjectives: <b>{noun[0]}</b>", reply_markup=random_word_kb().as_markup(resize_keyboard=True))
+    await state.set_state(RandomWordState.button)
+
+
 @user_router.message(Text("Articles"))
 @user_router.message(Text("next"), ArticlesState.next_or_menu)
 async def bt_articles(m: Message, state: FSMContext):
@@ -193,7 +213,7 @@ async def choose_article(m: Message, state: FSMContext):
                        f"Translation: <b><i>{data['translate']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
     else:
-        await m.answer(f"❌ Wrong!\n"
+        await m.answer(f"❌ Wrong!\n\n"
                        f"Correct: <b>{data['article']} {data['noun']}</b>.\n"
                        f"Translation: <b><i>{data['translate']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
@@ -229,7 +249,8 @@ async def bt_plural(m: Message, state: FSMContext):
     await state.update_data(p_ger=fetch[2])
     await state.update_data(s_trans=fetch[3].capitalize())
     await state.update_data(p_trans=fetch[4].capitalize())
-    await m.answer(f"Write the plural form of the verb <b><u>with article</u></b>\nRandom noun - <b>{fetch[1]} {fetch[0]}</b>",
+    await m.answer(f"Write the plural form of the verb <b><u>with article</u></b>\n"
+                   f"Random noun - <b>{fetch[1]} {fetch[0]}</b>",
                    reply_markup=idk_plural_kb().as_markup(resize_keyboard=True))
     await state.set_state(PluralState.answer)
 
@@ -248,12 +269,12 @@ async def write_plural_for_noun(m: Message, state: FSMContext):
     data = await state.get_data()
     user_answer = m.text.lower()
     if user_answer.strip() == f"die {data['p_ger'].lower()}":
-        await m.answer(f"✅ Correct!\n"
+        await m.answer(f"✅ Correct!\n\n"
                        f"{data['article']} {data['s_ger']} - <b>die {data['p_ger']}</b>\n"
                        f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
     else:
-        await m.answer(f"❌ Wrong!\n"
+        await m.answer(f"❌ Wrong!\n\n"
                        f"Correct:\n"
                        f"{data['article']} {data['s_ger']} - <b>die {data['p_ger']}</b>\n"
                        f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
@@ -262,12 +283,88 @@ async def write_plural_for_noun(m: Message, state: FSMContext):
 
 
 @user_router.message(Text("menu"), PluralState.next_or_menu)
-async def back_to_menu_from_article(m: Message, state: FSMContext):
+async def back_to_menu_from_plural(m: Message, state: FSMContext):
     await state.clear()
     await m.answer("You have reached the main menu",
                    reply_markup=home_keyboard().as_markup(resize_keyboard=True))
 
 
 
+
+
+
+
+
+
+@user_router.message(Text("Participle II (Perfect)"))
+@user_router.message(Text("next"), PerfectState.next_or_menu)
+async def bt_perfect(m: Message, state: FSMContext):
+    fetch = None
+    user_lang = await sql_fetchone_with_args('SELECT lang FROM "users" WHERE id = %s', (m.from_user.id,))
+    if user_lang[0] == "ru":
+        fetch = await sql_fetchone("select verb_ger_inf, verb_ger_past, verb_ger_perfect, verb_rus "
+                                   "from verbs "
+                                   "order by random() limit 1")
+    elif user_lang[0] == "ua":
+        fetch = await sql_fetchone("select verb_ger_inf, verb_ger_past, verb_ger_perfect, verb_ukr "
+                                   "from verbs "
+                                   "order by random() limit 1")
+    elif user_lang[0] == "en":
+        fetch = await sql_fetchone("select verb_ger_inf, verb_ger_past, verb_ger_perfect, verb_eng "
+                                   "from verbs "
+                                   "order by random() limit 1")
+    await state.update_data(ger_inf=fetch[0])
+    await state.update_data(ger_past=fetch[1])
+    await state.update_data(ger_perf=fetch[2])
+    await state.update_data(verb_trans=fetch[3])
+    await m.answer(f"Write this word in Participle II:\n"
+                   f"Random verb - <b>{fetch[0]}</b>",
+                   reply_markup=idk_plural_kb().as_markup(resize_keyboard=True))
+    await state.set_state(PerfectState.answer)
+
+
+@user_router.message(Text('i don`t know'), PerfectState.answer)
+async def idk_in_perfect(m: Message, state: FSMContext):
+    data = await state.get_data()
+    await m.answer(f"3 forms of verb:\n"
+                   f"{data['ger_inf']}\n"
+                   f"{data['ger_past']}\n"
+                   f"<b>{data['ger_perf']}</b>\n\n"
+                   f"Translate: <b>{data['verb_trans']}</b>",
+                   reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+    await state.set_state(PerfectState.next_or_menu)
+
+
+@user_router.message(Text, PerfectState.answer)
+async def write_in_participle_form(m: Message, state: FSMContext):
+    data = await state.get_data()
+    user_answer = m.text.lower()
+    print(user_answer)
+    print(data['ger_perf'])
+    if user_answer.strip() == f"{data['ger_perf'].lower()}":
+        await m.answer(f"✅ Correct!\n\n"
+                       f"3 forms of verb:\n"
+                       f"{data['ger_inf']}\n"
+                       f"{data['ger_past']}\n"
+                       f"<b>{data['ger_perf']}</b>\n\n"
+                       f"Translate: <b>{data['verb_trans']}</b>",
+                       reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+    else:
+        await m.answer(f"❌ Wrong!\n\n"
+                       f"Correct:\n"
+                       f"3 forms of verb:\n"
+                       f"{data['ger_inf']}\n"
+                       f"{data['ger_past']}\n"
+                       f"<b>{data['ger_perf']}</b>\n\n"
+                       f"Translate: <b>{data['verb_trans']}</b>",
+                       reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+    await state.set_state(PerfectState.next_or_menu)
+
+
+@user_router.message(Text("menu"), PerfectState.next_or_menu)
+async def back_to_menu_from_perfect(m: Message, state: FSMContext):
+    await state.clear()
+    await m.answer("You have reached the main menu",
+                   reply_markup=home_keyboard().as_markup(resize_keyboard=True))
 
 

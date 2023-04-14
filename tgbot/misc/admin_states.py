@@ -12,3 +12,10 @@ class AddNoun(StatesGroup):
     plural_ukr = State()
     sing_rus = State()
     plural_rus = State()
+
+
+class AddAdjectives(StatesGroup):
+    write_adj = State()
+    adj_eng = State()
+    adj_ukr = State()
+    adj_rus = State()

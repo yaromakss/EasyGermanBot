@@ -20,3 +20,8 @@ class PluralState(StatesGroup):
     answer = State()
     next_or_menu = State()
 
+
+class PerfectState(StatesGroup):
+    answer = State()
+    next_or_menu = State()
+

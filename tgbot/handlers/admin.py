@@ -10,10 +10,10 @@ import datetime
 import requests
 import asyncio
 
-from tgbot.keyboards.adminInlineBtn import noun_correct_kb
+from tgbot.keyboards.adminInlineBtn import noun_correct_kb, adj_correct_kb
 from tgbot.keyboards.adminTextBtn import admin_action_keyboard, admin_der_die_das
 from tgbot.keyboards.textBtn import home_keyboard
-from tgbot.misc.admin_states import AddNoun
+from tgbot.misc.admin_states import AddNoun, AddAdjectives
 from tgbot.misc.functions import sql_with_args, sql_fetchone_with_args, sql_fetchone
 from tgbot.services.del_message import delete_message
 
@@ -185,6 +185,77 @@ async def noun_correct(c: types.CallbackQuery, state: FSMContext):
 
 @admin_router.callback_query(lambda c: c.data == "noun_incorrect")
 async def noun_incorrect(c: types.CallbackQuery, state: FSMContext):
+    user_id = c.from_user.id
+    await c.message.delete()
+    await state.clear()
+    await bot.send_message(user_id, "You have reached the main menu")
+    await bot.send_message(user_id,
+                           "Okay. Please, choose action",
+                           reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
+
+
+@admin_router.message(Text('Add adjective'))
+async def bt_add_adj(m: Message, state: FSMContext):
+    await m.answer(f"Write the adjective (in the male form)", reply_markup=types.ReplyKeyboardRemove())
+    await state.set_state(AddAdjectives.write_adj)
+
+
+@admin_router.message(Text, AddAdjectives.write_adj)
+async def get_adj(m: Message, state: FSMContext):
+    adj = m.text
+    await state.update_data(adj=adj)
+    await m.answer("Great! Please write a translation for <b>English</b>")
+    await state.set_state(AddAdjectives.adj_eng)
+
+
+@admin_router.message(Text, AddAdjectives.adj_eng)
+async def get_adj_on_eng(m: Message, state: FSMContext):
+    adj_eng = m.text
+    await state.update_data(adj_eng=adj_eng)
+    await m.answer("Good! Please write a translation for <b>Ukrainian</b>")
+    await state.set_state(AddAdjectives.adj_ukr)
+
+
+@admin_router.message(Text, AddAdjectives.adj_ukr)
+async def get_adj_on_ukr(m: Message, state: FSMContext):
+    adj_ukr = m.text
+    await state.update_data(adj_ukr=adj_ukr)
+    await m.answer("Alright! Please write a translation for <b>Russian</b>")
+    await state.set_state(AddAdjectives.adj_rus)
+
+
+@admin_router.message(Text, AddAdjectives.adj_rus)
+async def get_adj_on_rus(m: Message, state: FSMContext):
+    adj_rus = m.text
+    await state.update_data(adj_rus=adj_rus)
+    data = await state.get_data()
+    await m.answer(f"Perfect! Check if everything is written correctly:\n\n"
+                   f"adjectives: {data['adj']}\n"
+                   f"adj_eng: {data['adj_eng']}\n"
+                   f"adj_ukr: {data['adj_ukr']}\n"
+                   f"adj_rus: {data['adj_rus']}\n",
+                   reply_markup=adj_correct_kb().as_markup(resize_keyboard=True))
+
+
+@admin_router.callback_query(lambda c: c.data == "adj_correct")
+async def adj_correct(c: types.CallbackQuery, state: FSMContext):
+    user_id = c.from_user.id
+    await c.message.delete()
+    data = await state.get_data()
+    await sql_with_args('INSERT INTO "adjectives" (adj_ger,'
+                        ' adj_eng,'
+                        ' adj_ukr,'
+                        ' adj_rus) VALUES (%s, %s,  %s,  %s)', (data['adj'],
+                                                                data['adj_eng'],
+                                                                data['adj_ukr'],
+                                                                data['adj_rus']))
+    await state.clear()
+    await bot.send_message(user_id, "Congratulations! New adjective has been added",
+                           reply_markup=admin_action_keyboard().as_markup(resize_keyboard=True))
+
+
+@admin_router.callback_query(lambda c: c.data == "adj_incorrect")
+async def adj_incorrect(c: types.CallbackQuery, state: FSMContext):
     user_id = c.from_user.id
     await c.message.delete()
     await state.clear()
