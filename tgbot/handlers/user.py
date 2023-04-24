@@ -1,11 +1,9 @@
 from aiogram import Router, Bot, types
-from aiogram.filters import Command, Text, StateFilter
-from aiogram.types import Message, FSInputFile
+from aiogram.filters import Command, Text
+from aiogram.types import Message
 from tgbot.config import load_config
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from magic_filter import F
-from aiogram.filters.callback_data import CallbackData
 
 from tgbot.misc.big_text import achievements
 from tgbot.misc.functions import auth_status, sql_fetchone_with_args, sql_fetchone,\
@@ -13,22 +11,7 @@ from tgbot.misc.functions import auth_status, sql_fetchone_with_args, sql_fetcho
 from tgbot.keyboards.textBtn import home_keyboard, random_word_kb, der_die_das_kb, next_or_menu_kb, idk_plural_kb
 from tgbot.keyboards.inlineBtn import choose_lang_keyboard, achievements_category
 
-
-import time
-import datetime
-import requests
-import asyncio
-
 from tgbot.misc.states import RandomWordState, ArticlesState, PluralState, PerfectState
-from tgbot.services.del_message import delete_message
-
-from tgbot.keyboards.inlineBtn import CastomCallback
-# CastomCallback.filter(F.action == "") // callback_query: types.CallbackQuery, callback_data: SellersCallbackFactory, state: FSMContext
-
-
-import psycopg2
-from psycopg2 import sql
-from psycopg2.extensions import AsIs
 
 user_router = Router()
 config = load_config(".env")
@@ -110,40 +93,62 @@ async def bt_achievements(m: Message):
                            reply_markup=kb.as_markup())
 
 
-@user_router.callback_query(lambda c: c.data == "participle")
-async def participle_achievements(c: types.CallbackQuery):
+@user_router.callback_query(lambda c: c.data == "perfect")
+async def perfect_achievements(c: types.CallbackQuery):
     user_id = c.from_user.id
-    await check_last_achievement(user_id)
-    cur_achieve = await sql_fetchone_with_args('SELECT last_achievement FROM "users" WHERE id = %s', (user_id,))
-    correct_answers = await sql_fetchone_with_args('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
+    correct = await sql_fetchone_with_args('SELECT correct_answ_perfect FROM "users" WHERE id = %s',
+                                           (user_id,))
+    await check_last_achievement(user_id, correct[0], "perfect")
+    cur_achieve = await sql_fetchone_with_args('SELECT last_achievement_perfect FROM "users" WHERE id = %s',
+                                               (user_id,))
+    correct_answers = await sql_fetchone_with_args('SELECT correct_answ_perfect FROM "users" WHERE id = %s',
+                                                   (user_id,))
     await c.message.delete()
-    await bot.send_message(user_id, f'Achievements of the category "participle": \n\n'
+    await bot.send_message(user_id, f'Achievements of the category "Participle II": \n\n'
                                     f'{achievements[cur_achieve[0]]}'
-                                    f'\n\nYour amount of the correct answers now: {correct_answers[0]}')
+                                    f'\n\nYour amount of the correct answers now: <b>{correct_answers[0]}</b>')
+    if correct_answers[0] >= 10000:
+        await bot.send_message(user_id, "Congratulations! All achievements has been opened! 🎉🎉🎉")
+        await bot.send_message(user_id, '🎉')
 
 
 @user_router.callback_query(lambda c: c.data == "articles")
-async def participle_achievements(c: types.CallbackQuery):
+async def articles_achievements(c: types.CallbackQuery):
     user_id = c.from_user.id
-    await check_last_achievement(user_id)
-    cur_achieve = await sql_fetchone_with_args('SELECT last_achievement FROM "users" WHERE id = %s', (user_id,))
-    correct_answers = await sql_fetchone_with_args('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
+    correct = await sql_fetchone_with_args('SELECT correct_answ_articles FROM "users" WHERE id = %s',
+                                           (user_id,))
+    await check_last_achievement(user_id, correct[0], "articles")
+    cur_achieve = await sql_fetchone_with_args('SELECT last_achievement_articles FROM "users" WHERE id = %s',
+                                               (user_id,))
+    correct_answers = await sql_fetchone_with_args('SELECT correct_answ_articles FROM "users" WHERE id = %s',
+                                                   (user_id,))
     await c.message.delete()
-    await bot.send_message(user_id, f'Achievements of the category "articles": \n\n'
+    await bot.send_message(user_id, f'Achievements of the category "Articles": \n\n'
                                     f'{achievements[cur_achieve[0]]}'
-                                    f'\n\nYour amount of the correct answers now: {correct_answers[0]}')
+                                    f'\n\nYour amount of the correct answers now: <b>{correct_answers[0]}</b>')
+    if correct_answers[0] >= 10000:
+        await bot.send_message(user_id, "Congratulations! All achievements has been opened! 🎉🎉🎉")
+        await bot.send_message(user_id, '🎉')
 
 
 @user_router.callback_query(lambda c: c.data == "plural")
-async def participle_achievements(c: types.CallbackQuery):
+async def plural_achievements(c: types.CallbackQuery):
     user_id = c.from_user.id
-    await check_last_achievement(user_id)
-    cur_achieve = await sql_fetchone_with_args('SELECT last_achievement FROM "users" WHERE id = %s', (user_id,))
-    correct_answers = await sql_fetchone_with_args('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
+    correct = await sql_fetchone_with_args('SELECT correct_answ_plural FROM "users" WHERE id = %s',
+                                           (user_id,))
+    await check_last_achievement(user_id, correct[0], "plural")
+    cur_achieve = await sql_fetchone_with_args('SELECT last_achievement_plural FROM "users" WHERE id = %s',
+                                               (user_id,))
+    correct_answers = await sql_fetchone_with_args('SELECT correct_answ_plural FROM "users" WHERE id = %s',
+                                                   (user_id,))
     await c.message.delete()
-    await bot.send_message(user_id, f'Achievements of the category "plural": \n\n'
+    await bot.send_message(user_id, f'Achievements of the category "Plural": \n\n'
                                     f'{achievements[cur_achieve[0]]}'
-                                    f'\n\nYour amount of the correct answers now: {correct_answers[0]}')
+                                    f'\n\nYour amount of the correct answers now: <b>{correct_answers[0]}</b>')
+    if correct_answers[0] >= 10000:
+        await bot.send_message(user_id, "Congratulations! All achievements has been opened! 🎉🎉🎉")
+        await bot.send_message(user_id, '🎉')
+
 
 
 @user_router.message(Text("Random word"))
@@ -175,7 +180,8 @@ async def random_word_noun(m: Message, state: FSMContext):
 @user_router.message(Text("Adjectives"), RandomWordState.button)
 async def random_word_noun(m: Message, state: FSMContext):
     noun = await sql_fetchone("select adj_ger from adjectives order by random() limit 1")
-    await m.answer(f"Random adjectives: <b>{noun[0]}</b>", reply_markup=random_word_kb().as_markup(resize_keyboard=True))
+    await m.answer(f"Random adjectives: <b>{noun[0]}</b>",
+                   reply_markup=random_word_kb().as_markup(resize_keyboard=True))
     await state.set_state(RandomWordState.button)
 
 
@@ -208,10 +214,13 @@ async def bt_articles(m: Message, state: FSMContext):
 async def choose_article(m: Message, state: FSMContext):
     user_article = m.text
     data = await state.get_data()
+    user_id = m.from_user.id
     if user_article == data['article']:
         await m.answer(f"✅ Correct! <b>{user_article} {data['noun']}</b>.\n"
                        f"Translation: <b><i>{data['translate']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+        await sql_with_args('UPDATE "users" SET "correct_answ_articles" = "correct_answ_articles" + 1 WHERE id = %s',
+                            (user_id,))
     else:
         await m.answer(f"❌ Wrong!\n\n"
                        f"Correct: <b>{data['article']} {data['noun']}</b>.\n"
@@ -268,11 +277,14 @@ async def idk_in_plural(m: Message, state: FSMContext):
 async def write_plural_for_noun(m: Message, state: FSMContext):
     data = await state.get_data()
     user_answer = m.text.lower()
+    user_id = m.from_user.id
     if user_answer.strip() == f"die {data['p_ger'].lower()}":
         await m.answer(f"✅ Correct!\n\n"
                        f"{data['article']} {data['s_ger']} - <b>die {data['p_ger']}</b>\n"
                        f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+        await sql_with_args('UPDATE "users" SET "correct_answ_plural" = "correct_answ_plural" + 1 WHERE id = %s',
+                            (user_id,))
     else:
         await m.answer(f"❌ Wrong!\n\n"
                        f"Correct:\n"
@@ -336,11 +348,10 @@ async def idk_in_perfect(m: Message, state: FSMContext):
 
 
 @user_router.message(Text, PerfectState.answer)
-async def write_in_participle_form(m: Message, state: FSMContext):
+async def write_in_perfect_form(m: Message, state: FSMContext):
     data = await state.get_data()
     user_answer = m.text.lower()
-    print(user_answer)
-    print(data['ger_perf'])
+    user_id = m.from_user.id
     if user_answer.strip() == f"{data['ger_perf'].lower()}":
         await m.answer(f"✅ Correct!\n\n"
                        f"3 forms of verb:\n"
@@ -349,6 +360,8 @@ async def write_in_participle_form(m: Message, state: FSMContext):
                        f"<b>{data['ger_perf']}</b>\n\n"
                        f"Translate: <b>{data['verb_trans']}</b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
+        await sql_with_args('UPDATE "users" SET "correct_answ_perfect" = "correct_answ_perfect" + 1 WHERE id = %s',
+                            (user_id,))
     else:
         await m.answer(f"❌ Wrong!\n\n"
                        f"Correct:\n"
@@ -366,5 +379,3 @@ async def back_to_menu_from_perfect(m: Message, state: FSMContext):
     await state.clear()
     await m.answer("You have reached the main menu",
                    reply_markup=home_keyboard().as_markup(resize_keyboard=True))
-
-

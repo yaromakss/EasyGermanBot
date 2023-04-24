@@ -1,5 +1,4 @@
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardButton, InlineKeyboardBuilder, KeyboardButton
-from aiogram import Bot, types
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, KeyboardButton
 
 
 def admin_action_keyboard():

@@ -1,4 +1,3 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 
@@ -24,4 +23,3 @@ class PluralState(StatesGroup):
 class PerfectState(StatesGroup):
     answer = State()
     next_or_menu = State()
-

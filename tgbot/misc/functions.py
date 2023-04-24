@@ -1,17 +1,7 @@
-from aiogram import Router, Bot, types
-from aiogram.types import Message, FSInputFile
+from aiogram import Bot
 from tgbot.config import load_config
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 
 import psycopg2
-from psycopg2 import sql
-from psycopg2.extensions import AsIs
-
-import datetime
-import asyncio
-
-from tgbot.keyboards.adminTextBtn import admin_action_keyboard
 
 config = load_config(".env")
 bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
@@ -72,23 +62,31 @@ async def auth_status(user_id):
     return answer
 
 
-async def check_last_achievement(user_id):
-    correct = await sql_fetchone_with_args('SELECT correct_answers FROM "users" WHERE id = %s', (user_id,))
+async def check_last_achievement(user_id, correct, category):
     last = 0
-    if correct[0] < 10:
+    if correct < 10:
         last = 0
-    elif correct[0] < 100:
+    elif correct < 100:
         last = 1
-    elif correct[0] < 500:
+    elif correct < 500:
         last = 2
-    elif correct[0] < 1000:
+    elif correct < 1000:
         last = 3
-    elif correct[0] < 3000:
+    elif correct < 3000:
         last = 4
-    elif correct[0] < 5000:
+    elif correct < 5000:
         last = 5
-    elif correct[0] < 10000:
+    elif correct < 10000:
         last = 6
-    elif correct[0] >= 10000:
+    elif correct >= 10000:
         last = 7
-    await sql_with_args('UPDATE "users" SET "last_achievement" = %s WHERE id = %s', (last, user_id))
+
+    if category == "plural":
+        await sql_with_args('UPDATE "users" SET "last_achievement_plural" = %s WHERE id = %s',
+                            (last, user_id))
+    elif category == "articles":
+        await sql_with_args('UPDATE "users" SET "last_achievement_articles" = %s WHERE id = %s',
+                            (last, user_id))
+    elif category == "perfect":
+        await sql_with_args('UPDATE "users" SET "last_achievement_perfect" = %s WHERE id = %s',
+                            (last, user_id))

@@ -1,4 +1,4 @@
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardButton, InlineKeyboardBuilder
+from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from aiogram.types import KeyboardButton
 
 
@@ -33,9 +33,6 @@ def random_word_kb():
     )
     kb.add(
         KeyboardButton(text="Adjectives")
-    )
-    kb.add(
-        KeyboardButton(text="Else")
     )
     kb.add(
         KeyboardButton(text="Menu")
@@ -77,6 +74,3 @@ def idk_plural_kb():
         KeyboardButton(text="i don`t know")
     )
     return kb
-
-
-

@@ -1,4 +1,3 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 
@@ -19,3 +18,12 @@ class AddAdjectives(StatesGroup):
     adj_eng = State()
     adj_ukr = State()
     adj_rus = State()
+
+
+class AddVerb(StatesGroup):
+    write_verb = State()
+    verb_ger_past = State()
+    verb_ger_perfect = State()
+    verb_eng = State()
+    verb_ukr = State()
+    verb_rus = State()

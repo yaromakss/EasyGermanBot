@@ -1,6 +1,4 @@
 import psycopg2
-from psycopg2 import sql
-from psycopg2.extensions import AsIs
 from tgbot.config import load_config
 
 import logging
@@ -16,16 +14,23 @@ async def postgre_start():
     cur = base.cursor()
     if base:
         logging.info(f"data base connect success!")
-    cur.execute('''CREATE TABLE IF NOT EXISTS "users"(
-                id               varchar not null
-                constraint users_pk
-                    primary key,
-                name             text    not null,
-                username         text,
-                correct_answers  integer default 0,
-                last_achievement integer default 0);
+    cur.execute('''create table if not exists public.users
+                (
+                    id                        integer not null
+                        constraint users_pk
+                            primary key,
+                    name                      text    not null,
+                    username                  text,
+                    lang                      varchar(2),
+                    correct_answ_plural       integer default 0,
+                    last_achievement_plural   integer default 0,
+                    correct_answ_articles     integer default 0,
+                    last_achievement_articles integer default 0,
+                    correct_answ_perfect      integer default 0,
+                    last_achievement_perfect  integer default 0
+                );
                 
-                create table if not exists "nouns"
+                create table if not exists public.nouns
                 (
                     id              serial
                         constraint nouns_pk
@@ -40,42 +45,30 @@ async def postgre_start():
                     noun_single_rus text not null,
                     noun_plural_rus text not null
                 );
-                
-                create table if not exists "verbs"
+                                
+                create table if not exists public.verbs
                 (
-                    id           serial
+                    id               serial
                         constraint verbs_pk
                             primary key,
-                    verb_inf     text not null,
-                    verb_past    text not null,
-                    verb_perfect text not null
+                    verb_ger_inf     text not null,
+                    verb_ger_past    text not null,
+                    verb_ger_perfect text not null,
+                    verb_eng         text not null,
+                    verb_ukr         text not null,
+                    verb_rus         text not null
                 );
-                
-                create table if not exists "adjectives"
+                                
+                create table if not exists public.adjectives
                 (
-                    id  serial
+                    id      serial
                         constraint adjectives_pk
                             primary key,
-                    adj text not null
-                );
-                
-                create table if not exists "achievements"
-                (
-                    id                         serial
-                        constraint achievements_pk
-                            primary key,
-                    achievement_name           text    not null,
-                    achievement_answers_amount integer not null
-                );
-                
-                
-                
-                
-                
-                
-                
-                
-                ''')
+                    adj_ger text not null,
+                    adj_eng text not null,
+                    adj_ukr text not null,
+                    adj_rus text not null
+                );''')
 
     base.commit()
     cur.close()

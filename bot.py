@@ -8,14 +8,13 @@ from tgbot.config import load_config
 from tgbot.handlers.admin import admin_router
 from tgbot.handlers.user import user_router
 from tgbot.middlewares.config import ConfigMiddleware
-from tgbot.db import start_db
 from tgbot.services import broadcaster
 
 logger = logging.getLogger(__name__)
 
 
 async def on_startup(bot: Bot, admin_ids: list[int]):
-    await broadcaster.broadcast(bot, admin_ids, "Бот був запущений")
+    await broadcaster.broadcast(bot, admin_ids, "Бот вышел на работу")
 
 
 def register_global_middlewares(dp: Dispatcher, config):
@@ -24,7 +23,6 @@ def register_global_middlewares(dp: Dispatcher, config):
 
 
 async def main():
-    # await start_db.postgre_start()
     logging.basicConfig(
         level=logging.INFO,
         format=u'%(filename)s:%(lineno)d #%(levelname)-8s [%(asctime)s] - %(name)s - %(message)s',
@@ -52,4 +50,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.error("Бот був вимкнений!")
+        logger.error("Бот завершил работу")
