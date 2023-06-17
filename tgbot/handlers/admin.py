@@ -26,7 +26,6 @@ async def admin_start(m: Message):
 
 
 @admin_router.message(Command('cancel'))
-@admin_router.message(Command('menu'))
 async def cancel_add_noun(m: Message, state: FSMContext):
     await state.clear()
     await m.answer("You have reached the main menu")

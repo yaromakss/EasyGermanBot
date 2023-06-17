@@ -35,7 +35,7 @@ def random_word_kb():
         KeyboardButton(text="Adjectives")
     )
     kb.add(
-        KeyboardButton(text="Menu")
+        KeyboardButton(text="⬅️ Menu")
     )
     kb.adjust(2)
     return kb
@@ -59,7 +59,7 @@ def der_die_das_kb():
 def next_or_menu_kb():
     kb = ReplyKeyboardBuilder()
     kb.add(
-        KeyboardButton(text="menu")
+        KeyboardButton(text="⬅️ Menu")
     )
     kb.add(
         KeyboardButton(text="next")

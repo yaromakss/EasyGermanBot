@@ -79,6 +79,7 @@ async def user_cannot_be_an_admin(m: Message):
 
 
 @user_router.message(Command('menu'))
+@user_router.message(Text("⬅️ Menu"))
 async def back_to_main_menu(m: Message, state: FSMContext):
     await state.clear()
     await m.answer("You have reached the main menu",
@@ -157,12 +158,6 @@ async def bt_random_word(m: Message, state: FSMContext):
     await state.set_state(RandomWordState.button)
 
 
-@user_router.message(Text("Menu"), RandomWordState.button)
-async def bt_main_menu(m: Message, state: FSMContext):
-    await m.answer("You have reached the main menu", reply_markup=home_keyboard().as_markup(resize_keyboard=True))
-    await state.clear()
-
-
 @user_router.message(Text("Noun"), RandomWordState.button)
 async def random_word_noun(m: Message, state: FSMContext):
     noun = await sql_fetchone("select noun_single_ger from nouns order by random() limit 1")
@@ -216,24 +211,17 @@ async def choose_article(m: Message, state: FSMContext):
     data = await state.get_data()
     user_id = m.from_user.id
     if user_article == data['article']:
-        await m.answer(f"✅ Correct! <b>{user_article} {data['noun']}</b>.\n"
+        await m.answer(f"✅ Correct! <b>{user_article} {data['noun']}</b>\n"
                        f"Translation: <b><i>{data['translate']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
         await sql_with_args('UPDATE "users" SET "correct_answ_articles" = "correct_answ_articles" + 1 WHERE id = %s',
                             (user_id,))
     else:
         await m.answer(f"❌ Wrong!\n\n"
-                       f"Correct: <b>{data['article']} {data['noun']}</b>.\n"
+                       f"Correct: <b>{data['article']} {data['noun']}</b>\n"
                        f"Translation: <b><i>{data['translate']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
     await state.set_state(ArticlesState.next_or_menu)
-
-
-@user_router.message(Text("menu"), ArticlesState.next_or_menu)
-async def back_to_menu_from_article(m: Message, state: FSMContext):
-    await state.clear()
-    await m.answer("You have reached the main menu",
-                   reply_markup=home_keyboard().as_markup(resize_keyboard=True))
 
 
 @user_router.message(Text("Plural"))
@@ -292,20 +280,6 @@ async def write_plural_for_noun(m: Message, state: FSMContext):
                        f"Translation: <b><i>{data['s_trans']} - {data['p_trans']}</i></b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
     await state.set_state(PluralState.next_or_menu)
-
-
-@user_router.message(Text("menu"), PluralState.next_or_menu)
-async def back_to_menu_from_plural(m: Message, state: FSMContext):
-    await state.clear()
-    await m.answer("You have reached the main menu",
-                   reply_markup=home_keyboard().as_markup(resize_keyboard=True))
-
-
-
-
-
-
-
 
 
 @user_router.message(Text("Participle II (Perfect)"))
@@ -372,10 +346,3 @@ async def write_in_perfect_form(m: Message, state: FSMContext):
                        f"Translate: <b>{data['verb_trans']}</b>",
                        reply_markup=next_or_menu_kb().as_markup(resize_keyboard=True))
     await state.set_state(PerfectState.next_or_menu)
-
-
-@user_router.message(Text("menu"), PerfectState.next_or_menu)
-async def back_to_menu_from_perfect(m: Message, state: FSMContext):
-    await state.clear()
-    await m.answer("You have reached the main menu",
-                   reply_markup=home_keyboard().as_markup(resize_keyboard=True))
